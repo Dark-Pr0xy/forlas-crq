@@ -1,9 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    # Replace <owner> with your GitHub username/org.
-    url: https://github.com/<owner>/forlas-crq/security/advisories/new
+    url: https://github.com/Dark-Pr0xy/forlas-crq/security/advisories/new
     about: Report security issues privately — do NOT open a public issue. See SECURITY.md.
   - name: Questions & discussion
-    url: https://github.com/<owner>/forlas-crq/discussions
+    url: https://github.com/Dark-Pr0xy/forlas-crq/discussions
     about: Ask a question or discuss an idea (enable Discussions in repo settings).

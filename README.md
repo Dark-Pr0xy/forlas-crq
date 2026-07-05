@@ -1,7 +1,6 @@
 # FORLAS CRQ — Beta
 
-<!-- Replace <owner> with your GitHub username/org once the repo is pushed. -->
-[![CI](https://github.com/<owner>/forlas-crq/actions/workflows/ci.yml/badge.svg)](https://github.com/<owner>/forlas-crq/actions/workflows/ci.yml)
+[![CI](https://github.com/Dark-Pr0xy/forlas-crq/actions/workflows/ci.yml/badge.svg)](https://github.com/Dark-Pr0xy/forlas-crq/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENCE.md)
 
 Production Beta of the FORLAS CRQ tool: a **local-first, offline, no-cloud, no-telemetry** quantitative cyber risk platform built on the FAIR methodology, Monte Carlo simulation, and portfolio aggregation.
