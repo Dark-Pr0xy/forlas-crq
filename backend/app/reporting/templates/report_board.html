@@ -1,0 +1,71 @@
+{% extends "_base.html" %}
+{% block body %}
+  <h2>Portfolio at a glance</h2>
+  <div class="kpis">
+    <div class="kpi t-accent"><div class="lbl">Portfolio ALE</div><div class="val">{{ portfolio.total_ale | money }}</div></div>
+    <div class="kpi t-amber"><div class="lbl">P95</div><div class="val">{{ portfolio.total_p95 | money }}</div></div>
+    <div class="kpi t-rose"><div class="lbl">P99</div><div class="val">{{ portfolio.total_p99 | money }}</div></div>
+  </div>
+
+  <p class="note">
+    {{ simulated_count }} of {{ scenario_count }} scenarios simulated.
+    {{ portfolio.over_tolerance_count }} exceed their tolerance.
+    {% if portfolio.appetite %}
+      Appetite {{ portfolio.appetite | money }} · utilisation {{ portfolio.appetite_utilisation | pct }}.
+    {% endif %}
+  </p>
+
+  <h2>Per-scenario detail</h2>
+  {% for s in scenarios %}
+    <div class="scenario-block">
+      <h3>
+        <span>{{ s.name }}</span>
+        <span class="pill">{{ s.mode }}</span>
+        {% if s.business_unit %}<span class="muted">· {{ s.business_unit }}</span>{% endif %}
+        {% if s.owner %}<span class="muted">· {{ s.owner }}</span>{% endif %}
+        <span class="muted" style="margin-left:auto">v{{ s.version }}</span>
+      </h3>
+      {% if not s.simulated %}
+        <p class="muted">No completed simulation runs yet.</p>
+      {% else %}
+        <div class="kpis" style="grid-template-columns: repeat(5, 1fr); margin: 8px 0">
+          <div class="kpi t-accent"><div class="lbl">ALE</div><div class="val">{{ s.ale | money }}</div></div>
+          <div class="kpi t-plum"><div class="lbl">P50</div><div class="val">{{ s.p50 | money }}</div></div>
+          <div class="kpi t-amber"><div class="lbl">P95</div><div class="val">{{ s.p95 | money }}</div></div>
+          <div class="kpi t-rose"><div class="lbl">P99</div><div class="val">{{ s.p99 | money }}</div></div>
+          <div class="kpi t-rose"><div class="lbl">Tail mean</div><div class="val">{{ s.tail_mean | money }}</div></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><th>Tolerance</th><td class="num">{{ s.tolerance | money }}</td></tr>
+            <tr><th>P(L &gt; Tolerance)</th><td class="num">{{ s.prob_exceed_tolerance | pct(2) }}</td></tr>
+            <tr><th>95% CI on ALE</th><td class="num">{{ s.ci_lo | money }} … {{ s.ci_hi | money }}</td></tr>
+            <tr><th>Iterations / Seed</th><td class="num">{{ s.iterations }} / {{ s.seed }}</td></tr>
+            <tr><th>Assessment date</th><td>{{ s.assessment_date | date }}</td></tr>
+            <tr><th>Review date</th><td>{{ s.review_date | date }}</td></tr>
+          </tbody>
+        </table>
+        {% if s.sensitivity %}
+          <h3>Sensitivity (rank correlation)</h3>
+          <table>
+            <thead>
+              <tr><th>Driver</th><th class="num">Correlation</th></tr>
+            </thead>
+            <tbody>
+              {% for d in s.sensitivity %}
+                <tr>
+                  <td>{{ d.label }}</td>
+                  <td class="num">{{ "%.3f"|format(d.corr) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+        {% if s.notes %}
+          <h3>Notes</h3>
+          <p class="note">{{ s.notes }}</p>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "_base.html" %}
+{% block body %}
+  <h2>Portfolio summary</h2>
+  <div class="kpis">
+    <div class="kpi t-accent"><div class="lbl">Portfolio ALE</div><div class="val">{{ portfolio.total_ale | money }}</div></div>
+    <div class="kpi t-plum"><div class="lbl">P50</div><div class="val">{{ portfolio.total_p50 | money }}</div></div>
+    <div class="kpi t-amber"><div class="lbl">P95</div><div class="val">{{ portfolio.total_p95 | money }}</div></div>
+    <div class="kpi t-rose"><div class="lbl">P99</div><div class="val">{{ portfolio.total_p99 | money }}</div></div>
+    <div class="kpi t-rose"><div class="lbl">Tail mean (&gt;P95)</div><div class="val">{{ portfolio.total_tail | money }}</div></div>
+    <div class="kpi t-teal">
+      <div class="lbl">95% CI on ALE</div>
+      <div class="val" style="font-size:13px">{{ portfolio.ci_lo | money }} … {{ portfolio.ci_hi | money }}</div>
+    </div>
+  </div>
+
+  <p class="note">
+    Aggregated across {{ "{:,}".format(portfolio.iterations) }} iterations per scenario, assuming independent loss
+    distributions. {{ portfolio.over_tolerance_count }} scenario(s) currently exceed their declared tolerance.
+    {% if portfolio.appetite %}
+      Risk appetite of {{ portfolio.appetite | money }} — utilisation {{ portfolio.appetite_utilisation | pct }}.
+    {% endif %}
+  </p>
+
+  <h2>Top loss drivers</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Scenario</th>
+        <th class="num">ALE</th>
+        <th class="num">P95</th>
+        <th class="num">P99</th>
+        <th class="num">Share of ALE</th>
+        <th>Tolerance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in portfolio.per_scenario[:10] %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td class="num">{{ s.ale | money }}</td>
+          <td class="num">{{ s.p95 | money }}</td>
+          <td class="num">{{ s.p99 | money }}</td>
+          <td class="num">{{ s.share_of_ale | pct }}</td>
+          <td>
+            {% if s.tolerance > 0 %}
+              <span class="badge {% if s.over_tolerance %}over{% else %}within{% endif %}">
+                {{ s.utilisation | pct(0) }} of {{ s.tolerance | money }}
+              </span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Caveats</h2>
+  <ul class="note">
+    <li>Loss distributions are model-based estimates with the chosen distribution families.</li>
+    <li>Portfolio aggregation assumes independence across scenarios.</li>
+    <li>Numbers should be triangulated with incident history, threat intelligence and control telemetry.</li>
+    <li>Outputs are not legal, financial, insurance or regulatory advice.</li>
+  </ul>
+{% endblock %}

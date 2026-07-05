@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a problem with FORLAS CRQ
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Do not use this form for security vulnerabilities** — follow the process in `SECURITY.md` instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including expected vs actual behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: App version (or the installer filename), or the git commit if running from source.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: How are you running it?
+      options:
+        - Installed desktop app (Windows)
+        - Docker
+        - From source (dev)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Windows 11 23H2
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Any relevant backend output or errors. The backend runs on 127.0.0.1:8765; the desktop app forwards its logs to stderr.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: This is not a security vulnerability (those go through SECURITY.md).
+          required: true
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true

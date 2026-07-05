@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title }} — {{ app_name }}</title>
+    <style>
+      @page { margin: 18mm 16mm; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 12.5px; color: #1b2230; line-height: 1.45;
+        background: #ffffff;
+      }
+      h1 { font-size: 22px; margin: 0; }
+      h2 { font-size: 15px; margin: 24px 0 10px; border-bottom: 1px solid #e8ebf2; padding-bottom: 4px; }
+      h3 { font-size: 13px; margin: 18px 0 6px; }
+      .meta { color: #647085; font-size: 11.5px; margin-top: 6px; }
+      .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 16px; }
+      .kpi { border: 1px solid #e8ebf2; border-radius: 6px; padding: 10px 12px; position: relative; }
+      .kpi .lbl { font-size: 10.5px; color: #647085; text-transform: uppercase; letter-spacing: 0.5px; }
+      .kpi .val { font-size: 18px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+      .kpi.t-accent { border-left: 3px solid #7A92F4; }
+      .kpi.t-plum   { border-left: 3px solid #A28AD9; }
+      .kpi.t-amber  { border-left: 3px solid #E3C07B; }
+      .kpi.t-rose   { border-left: 3px solid #D98DA3; }
+      .kpi.t-teal   { border-left: 3px solid #78C5B7; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11.5px; }
+      th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eef1f6; }
+      th { color: #647085; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; background: #fafbfd; }
+      .num { font-variant-numeric: tabular-nums; text-align: right; }
+      .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; background: #eef1f6; color: #647085; font-size: 10.5px; }
+      .badge.over { background: #fbe7ed; color: #c95f7a; }
+      .badge.within { background: #e3f3ea; color: #3a8a5c; }
+      .header {
+        display: flex; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 2px solid #1b2230;
+      }
+      .header .logo {
+        width: 32px; height: 32px; border-radius: 6px;
+        background: linear-gradient(135deg, #7A92F4, #A28AD9);
+      }
+      .scenario-block { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e8ebf2; page-break-inside: avoid; }
+      .scenario-block h3 { margin-top: 0; display: flex; align-items: baseline; gap: 8px; }
+      .footer {
+        margin-top: 30px; padding-top: 10px; border-top: 1px solid #e8ebf2;
+        color: #647085; font-size: 10px; display: flex; justify-content: space-between;
+      }
+      .muted { color: #647085; }
+      .note { margin: 6px 0; color: #647085; }
+      .pill { display: inline-block; padding: 1px 7px; border-radius: 10px; background: #ecf0fe; color: #7A92F4; font-size: 10.5px; }
+      .print-btn {
+        position: fixed; top: 12px; right: 12px;
+        background: #7A92F4; color: white; border: none; padding: 8px 14px; border-radius: 6px;
+        font-size: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(20,30,50,.15);
+      }
+      @media print { .print-btn { display: none; } }
+    </style>
+  </head>
+  <body>
+    <button class="print-btn" onclick="window.print()">Print to PDF</button>
+    <div class="header">
+      <div class="logo"></div>
+      <div>
+        <h1>{{ title }}</h1>
+        <div class="meta">
+          {{ app_name }} v{{ app_version }} · Generated {{ generated_at | date }} ·
+          {{ simulated_count }}/{{ scenario_count }} scenarios simulated
+        </div>
+      </div>
+    </div>
+    {% block body %}{% endblock %}
+    <div class="footer">
+      <div>{{ app_name }} v{{ app_version }} · FORLAS CRQ · Local-first, offline.</div>
+      <div>Reports require independent human review before reliance.</div>
+    </div>
+  </body>
+</html>
