@@ -30,10 +30,9 @@ FORLAS CRQ is pre-1.0 and maintained on a best-effort basis. Security fixes are 
 Report it privately via either:
 
 1. **GitHub Private Vulnerability Reporting** (preferred) — use the **"Report a vulnerability"** button under this repository's **Security** tab. *(Maintainer: enable this in Settings → Code security and analysis.)*
-2. **Email** — `<add a security contact email here>` *(optional; add if you want a channel outside GitHub).*
+2. **Email** — 48585753+Dark-Pr0xy@users.noreply.github.com
 
-Please include:
-
+3. Please include:
 - A description of the issue and its impact.
 - Steps to reproduce, ideally a minimal proof-of-concept.
 - Affected version or commit, and platform.
