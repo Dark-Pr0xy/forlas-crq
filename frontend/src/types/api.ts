@@ -50,7 +50,6 @@ export interface ScenarioRead {
   description: string | null;
   business_unit: string | null;
   scenario_type: string | null;
-  benchmark_group: string | null;
   tags: string[];
   owner_label: string | null;
   owner_user_id: number | null;
@@ -83,6 +82,7 @@ export interface UserPublic {
 
 export interface SessionStatus {
   authenticated: boolean;
+  needs_setup: boolean;
   user: UserPublic | null;
   ula_acknowledged: boolean;
   ula_version: string | null;
@@ -94,6 +94,53 @@ export interface AppSettings {
   theme: string;
   ula_acknowledged_version: string | null;
   ula_acknowledged_at: string | null;
+  enforce_separation_of_duties: boolean;
+  scenario_types: string[];
+}
+
+export interface ScenarioTypesResponse {
+  types: string[];
+}
+
+export interface DataSource {
+  title: string;
+  description?: string | null;
+  reference?: string | null;
+  date?: string | null;
+  confidence?: string | null;
+}
+
+export interface Assumption {
+  statement: string;
+  rationale?: string | null;
+  impact?: string | null;
+}
+
+export interface Gap {
+  description: string;
+  severity?: string | null;
+  mitigation?: string | null;
+}
+
+export interface AnalysisRecord {
+  scenario_id: string;
+  summary: string | null;
+  confidence: string | null;
+  data_sources: DataSource[];
+  assumptions: Assumption[];
+  gaps: Gap[];
+  input_rationale: Record<string, string>;
+  updated_at: string | null;
+  updated_by_user_id: number | null;
+}
+
+export interface AnalysisUpdate {
+  summary?: string | null;
+  confidence?: string | null;
+  data_sources?: DataSource[];
+  assumptions?: Assumption[];
+  gaps?: Gap[];
+  input_rationale?: Record<string, string>;
 }
 
 export type SimulationStatus =

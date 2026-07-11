@@ -47,6 +47,33 @@ def required_role(action: Transition) -> Role:
     return _TRANSITIONS[action][2]
 
 
+def separation_of_duties_enabled(db: Session) -> bool:
+    """Whether the submitter-cannot-approve control is active (default on).
+
+    Stored in ``AppSettings.extras['enforce_separation_of_duties']`` so a
+    single-user local install can turn it off; multi-user installs keep it on.
+    """
+    from app.models.settings import AppSettings
+
+    s = db.get(AppSettings, 1)
+    if s is None or not s.extras:
+        return True
+    val = s.extras.get("enforce_separation_of_duties")
+    return True if val is None else bool(val)
+
+
+def _latest_submitter_id(db: Session, scenario: Scenario) -> int | None:
+    """Who last submitted this scenario for review, if anyone."""
+    row = db.exec(
+        select(ApprovalRequest)
+        .where(ApprovalRequest.entity_type == "scenario")
+        .where(ApprovalRequest.entity_id == scenario.id)
+        .where(ApprovalRequest.state == ApprovalState.IN_REVIEW)
+        .order_by(ApprovalRequest.created_at.desc())
+    ).first()
+    return row.requested_by_user_id if row else None
+
+
 def transition_scenario(
     db: Session,
     scenario: Scenario,
@@ -71,6 +98,18 @@ def transition_scenario(
             status.HTTP_403_FORBIDDEN,
             f"{action} requires role >= {required.value}",
         )
+
+    # Segregation of duties: whoever submitted a scenario for review must not be
+    # the one who approves it. Applies regardless of role (even an Owner who
+    # submitted cannot self-approve) unless the control is disabled in settings.
+    if action == "approve" and separation_of_duties_enabled(db):
+        submitter_id = _latest_submitter_id(db, scenario)
+        if submitter_id is not None and submitter_id == actor.id:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Separation of duties: the person who submitted this scenario for "
+                "review cannot approve it. A different approver must sign it off.",
+            )
 
     prev_state = scenario.approval_state
     scenario.approval_state = target_state

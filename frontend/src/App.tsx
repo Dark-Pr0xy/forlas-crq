@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { api, setSessionToken, setUnauthorizedHandler } from "@/lib/api";
 import { LoginPanel } from "@/components/common/LoginPanel";
+import { FirstRunSetup } from "@/components/common/FirstRunSetup";
 import { UlaGate } from "@/components/common/UlaGate";
 import { router } from "@/routes/router";
 import { useAuth } from "@/store/auth";
@@ -11,6 +12,7 @@ import type { SessionStatus } from "@/types/api";
 export function App() {
   const hydrated = useAuth((s) => s.hydrated);
   const authenticated = useAuth((s) => s.authenticated);
+  const needsSetup = useAuth((s) => s.needsSetup);
   const ulaAcknowledged = useAuth((s) => s.ulaAcknowledged);
   const setSession = useAuth((s) => s.setSession);
   const queryClient = useQueryClient();
@@ -66,7 +68,8 @@ export function App() {
   }
 
   if (!authenticated) {
-    return <LoginPanel />;
+    // Fresh install with no accounts yet → let the user create the first one.
+    return needsSetup ? <FirstRunSetup /> : <LoginPanel />;
   }
 
   return (

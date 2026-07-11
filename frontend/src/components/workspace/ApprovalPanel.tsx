@@ -3,6 +3,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
+import { apiErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/cn";
 import { useAuth } from "@/store/auth";
 import { useTransitionScenario, type ApprovalAction } from "@/lib/queries";
 import type { ApprovalState, Role, ScenarioRead } from "@/types/api";
@@ -41,12 +43,57 @@ const STATE_TONE: Record<ApprovalState, "neutral" | "amber" | "success" | "plum"
   archived: "plum",
 };
 
+// Human labels — "in_review" reads as "Submitted" in the pipeline.
+const STATE_LABEL: Record<ApprovalState, string> = {
+  draft: "Draft",
+  in_review: "Submitted",
+  approved: "Approved",
+  archived: "Archived",
+};
+
+// The linear pipeline shown as a stepper. Archived is a terminal offshoot and
+// is surfaced separately (a badge) rather than as a stage.
+const PIPELINE: ApprovalState[] = ["draft", "in_review", "approved"];
+
+function StageStepper({ state }: { state: ApprovalState }) {
+  const activeIndex = state === "archived" ? PIPELINE.length : PIPELINE.indexOf(state);
+  return (
+    <div className="flex items-center gap-1">
+      {PIPELINE.map((s, i) => {
+        const done = i < activeIndex;
+        const current = i === activeIndex;
+        return (
+          <div key={s} className="flex items-center gap-1">
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10.5px] font-medium",
+                current
+                  ? "bg-accent text-white"
+                  : done
+                    ? "bg-accent-soft text-accent"
+                    : "bg-[var(--c-border-2)] text-muted",
+              )}
+            >
+              {STATE_LABEL[s]}
+            </span>
+            {i < PIPELINE.length - 1 && (
+              <span className={cn("h-px w-3", done ? "bg-accent" : "bg-[var(--c-border-2)]")} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ApprovalPanel({
   scenario,
   isDirty,
+  separationOfDuties = true,
 }: {
   scenario: ScenarioRead;
   isDirty: boolean;
+  separationOfDuties?: boolean;
 }) {
   const user = useAuth((s) => s.user);
   const rank = user ? ROLE_RANK[user.role] : 0;
@@ -61,13 +108,19 @@ export function ApprovalPanel({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           Approval
-          <Badge tone={STATE_TONE[state]}>{state.replace("_", " ")}</Badge>
+          <Badge tone={STATE_TONE[state]}>{STATE_LABEL[state]}</Badge>
         </CardTitle>
       </CardHeader>
       <CardBody className="space-y-2.5">
+        <StageStepper state={state} />
         {isDirty && (
           <p className="text-[11px] text-amber">
             Save your changes before changing the approval state.
+          </p>
+        )}
+        {state === "in_review" && separationOfDuties && (
+          <p className="text-[11px] text-muted">
+            Separation of duties: a user other than the submitter must approve this scenario.
           </p>
         )}
         {actions.length > 0 && (
@@ -104,9 +157,7 @@ export function ApprovalPanel({
           )}
         </div>
         {transition.isError && (
-          <p className="text-xs text-rose">
-            Transition failed — you may not have permission for this action.
-          </p>
+          <p className="text-xs text-rose">{apiErrorMessage(transition.error)}</p>
         )}
       </CardBody>
     </Card>

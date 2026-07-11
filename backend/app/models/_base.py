@@ -36,7 +36,7 @@ class Role(str, Enum):
     READONLY = "readonly"
 
     @classmethod
-    def rank(cls, value: "Role | str") -> int:
+    def rank(cls, value: Role | str) -> int:
         order = [cls.READONLY, cls.REVIEWER, cls.APPROVER, cls.OWNER]
         return order.index(cls(value))
 

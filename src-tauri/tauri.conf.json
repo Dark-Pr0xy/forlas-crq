@@ -1,9 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "FORLAS CRQ",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "app.forlas.crq",
-    "build": {
+  "build": {
+    "beforeBuildCommand": "npm --prefix ../frontend run build",
     "frontendDist": "../frontend/dist",
     "devUrl": "http://localhost:5173"
   },

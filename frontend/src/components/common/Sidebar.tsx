@@ -3,6 +3,7 @@ import {
   BarChart3,
   ClipboardList,
   Database,
+  FileSearch,
   LayoutDashboard,
   ScrollText,
   Settings,
@@ -18,6 +19,7 @@ const groups = [
     items: [
       { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard & Reporting" },
       { to: "/workspace", icon: Workflow, label: "Risk Assessment Workspace" },
+      { to: "/analysis", icon: FileSearch, label: "Analysis & Evidence" },
       { to: "/sim-data", icon: Database, label: "Monte Carlo Simulation Data" },
       { to: "/register", icon: ClipboardList, label: "Quantified Exposure Register" },
     ],

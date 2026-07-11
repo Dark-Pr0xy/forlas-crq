@@ -27,11 +27,11 @@ from io import BytesIO
 from typing import Any
 
 from docx import Document
-from docx.enum.text import WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.shared import Cm, Pt, RGBColor
 
 from app.reporting.currency import format_currency_aud as _money
-from app.reporting.currency import format_signed_money as _signed
+from app.runtime import resource_path
 
 
 def _pct(v: Any, decimals: int = 1) -> str:
@@ -65,6 +65,18 @@ def _muted(doc: Document, text: str) -> None:
 
 def _page_break(doc: Document) -> None:
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+
+
+def _cover_logo(doc: Document) -> None:
+    """Centre the FORLAS brand banner at the top of the cover, if available."""
+    try:
+        path = resource_path("app", "assets", "forlas-brand.png")
+        if path.exists():
+            # Square tile: keep the cover mark modest.
+            doc.add_picture(str(path), width=Cm(5.5))
+            doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    except OSError:
+        pass
 
 
 def _two_col_table(doc: Document, rows: list[tuple[str, str]]) -> None:
@@ -306,7 +318,7 @@ def _assumptions(doc: Document, ctx: dict[str, Any]) -> None:
     bullets = [
         "Scenarios are modelled as independent annual loss processes.",
         "Loss Event Frequency follows the user-selected decomposition mode "
-        "(direct LEF / TEF × Vulnerability / TCap vs Resistance Strength).",
+        "(direct LEF / TEF × Vulnerability / TCap vs Resistance Strength).",  # noqa: RUF001
         "Primary and secondary losses are sampled from the user-specified distributions.",
         "Portfolio aggregation assumes statistical independence across scenarios.",
         "All monetary values are denominated in Australian Dollars (AUD).",
@@ -395,6 +407,7 @@ def build_docx_report(context: dict[str, Any]) -> bytes:
         section.bottom_margin = Cm(1.8)
 
     # Cover
+    _cover_logo(doc)
     _heading(doc, context["title"], level=0)
     _muted(
         doc,

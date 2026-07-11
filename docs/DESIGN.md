@@ -1,7 +1,7 @@
 # FORLAS CRQ — Beta Design Document
 
-**Version:** 0.1.0
-**Date:** 2026-06-29
+**Version:** 0.2.0
+**Date:** 2026-07-11
 **Author:** Michael Walker
 **Status:** As-built, post Phase 9.
 
@@ -58,14 +58,15 @@ audit log on every mutation.
    during long simulations don't block writers; `synchronous=NORMAL` for
    low-latency writes; `busy_timeout=5000ms` for the rare contention case.
 3. **Local accounts.** Argon2id password hashing, signed session cookies via
-   `itsdangerous`. No JWTs, no OAuth, no remote IdP. The bootstrap account
-   is created on first run with a random password printed to stdout once.
+   `itsdangerous`. No JWTs, no OAuth, no remote IdP. The first account is
+   created interactively on first run (a "Create your account" screen), or
+   auto-created when an owner password is preset for server deployments.
 4. **Plugin host via entry points.** Distributions, exporters, knowledge
    catalogues are pluggable through `importlib.metadata.entry_points`. The
    built-in distribution and knowledge sets are themselves the reference
    implementation of the contract.
 5. **HTML print-to-PDF, not headless Chrome.** Same workflow as the Alpha;
-   zero install-time dependencies (WeasyPrint is opt-in for headless PDFs).
+   zero install-time dependencies.
 
 ---
 
@@ -370,13 +371,13 @@ Beta importer (`POST /api/import/alpha`) accepts the Alpha's own
 | `version`           | `scenarios.version_label`                          |
 | `assessmentDate`    | `scenarios.assessment_date`                        |
 | `reviewDate`        | `scenarios.review_date`                            |
-| `benchmarkGroup`    | `scenarios.benchmark_group`                        |
 | `notes`             | `scenarios.notes`                                  |
 
 Items NOT brought across (regenerable):
 - `cache` (simulation results) — re-run in the Beta engine
 - `portfolioSnapshots` — start fresh
 - `history` (legacy) — discarded
+- `benchmarkGroup` — retired field; no longer stored or imported
 
 ---
 
@@ -570,9 +571,10 @@ Both consume the same `context` dict produced by `reporting/data.py`. The
 context shape is documented at the top of that module — adding a new format
 is a one-file change (write a `Plugin.render(context) → (bytes, mime, name)`).
 
-WeasyPrint is supported but opt-in (`pip install ".[pdf]"`) because of its
-GTK dependency on Windows. If installed, a future endpoint can take the same
-context and produce server-rendered PDF without the browser print loop.
+Server-rendered PDF (for example via WeasyPrint) was considered and dropped:
+its GTK dependency on Windows outweighs the benefit while browser
+print-to-PDF covers the same need. A future plugin can add it through the
+same context contract.
 
 ---
 

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { FileSearch } from "lucide-react";
 import { api } from "@/lib/api";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { DistributionParamCard } from "@/components/workspace/DistributionParamCard";
@@ -10,6 +12,8 @@ import { NewScenarioDialog } from "@/components/workspace/NewScenarioDialog";
 import { RunControls } from "@/components/workspace/RunControls";
 import { ScenarioList } from "@/components/workspace/ScenarioList";
 import { SimulationResults } from "@/components/workspace/SimulationResults";
+import { SortableCards } from "@/components/common/SortableCards";
+import { useCardOrder } from "@/lib/useCardOrder";
 import {
   useLatestSimulation,
   useScenarios,
@@ -46,7 +50,6 @@ const _EDITABLE_KEYS = [
   "description",
   "business_unit",
   "scenario_type",
-  "benchmark_group",
   "tags",
   "owner_label",
   "mode",
@@ -77,6 +80,8 @@ function visibleVariables(mode: DecompositionMode): string[] {
   return ["tef", "tcap", "rs", "plm", "slp_prob", "slm"];
 }
 
+const WORKSPACE_PANEL_ORDER = ["run", "approval", "metadata"];
+
 export function WorkspacePage() {
   const { data: scenarios } = useScenarios();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -95,8 +100,12 @@ export function WorkspacePage() {
     [scenarios, selectedId],
   );
 
+  // Re-baseline the draft only when a different scenario (or a newer server
+  // copy) arrives; depending on `selected` itself would clobber typing on
+  // every list refetch.
   useEffect(() => {
     if (selected) setDraft(selected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, selected?.updated_at]);
 
   const { data: settings } = useQuery<AppSettings>({
@@ -107,6 +116,7 @@ export function WorkspacePage() {
     selectedId,
   );
   const updateMutation = useUpdateScenario(selectedId ?? "");
+  const panelOrder = useCardOrder("forlas.workspace_panels", WORKSPACE_PANEL_ORDER);
 
   // Compare only the editable projection with a key-stable serialisation so
   // server-side key reordering / float round-trips don't fire false "unsaved"
@@ -198,19 +208,30 @@ export function WorkspacePage() {
                     </span>
                   )}
                 </CardTitle>
-                <button
-                  type="button"
-                  disabled={!isDirty || updateMutation.isPending}
-                  className="ml-auto rounded-sm border bg-accent px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
-                  onClick={() => {
-                    if (!draft) return;
-                    persist(draft).catch(() => {
-                      /* reason captured in saveError state */
-                    });
-                  }}
-                >
-                  {updateMutation.isPending ? "Saving…" : "Save"}
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  <Link
+                    to="/analysis"
+                    search={{ scenario: draft.id }}
+                    className="flex items-center gap-1.5 rounded-sm border px-3 py-1 text-xs font-medium text-ink hover:bg-[var(--c-border-2)]"
+                    title="Open this scenario's analysis and evidence"
+                  >
+                    <FileSearch className="h-3.5 w-3.5" />
+                    Analysis &amp; evidence
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={!isDirty || updateMutation.isPending}
+                    className="rounded-sm border bg-accent px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+                    onClick={() => {
+                      if (!draft) return;
+                      persist(draft).catch(() => {
+                        /* reason captured in saveError state */
+                      });
+                    }}
+                  >
+                    {updateMutation.isPending ? "Saving…" : "Save"}
+                  </button>
+                </div>
               </CardHeader>
               <CardBody>
                 {(saveError || problems.length > 0) && (
@@ -275,18 +296,50 @@ export function WorkspacePage() {
       <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
         {draft && settings && (
           <>
-            <RunControls
-              scenario={draft}
-              settings={settings}
-              onReductionChange={(pct) => updateDraft({ reduction_pct: pct })}
-              isDirty={isDirty}
-              problems={problems}
-              onSaveBeforeRun={async () => {
-                if (draft) await persist(draft);
+            {panelOrder.isCustomized && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={panelOrder.reset}
+                  className="text-[11px] text-muted hover:text-ink"
+                >
+                  Reset panel order
+                </button>
+              </div>
+            )}
+            <SortableCards
+              layout="stack"
+              order={panelOrder.order}
+              onReorder={panelOrder.apply}
+              cards={{
+                run: {
+                  node: (
+                    <RunControls
+                      scenario={draft}
+                      settings={settings}
+                      onReductionChange={(pct) => updateDraft({ reduction_pct: pct })}
+                      isDirty={isDirty}
+                      problems={problems}
+                      onSaveBeforeRun={async () => {
+                        if (draft) await persist(draft);
+                      }}
+                    />
+                  ),
+                },
+                approval: {
+                  node: (
+                    <ApprovalPanel
+                      scenario={draft}
+                      isDirty={isDirty}
+                      separationOfDuties={settings.enforce_separation_of_duties}
+                    />
+                  ),
+                },
+                metadata: {
+                  node: <MetadataPanel scenario={draft} onChange={onMetadataChange} />,
+                },
               }}
             />
-            <ApprovalPanel scenario={draft} isDirty={isDirty} />
-            <MetadataPanel scenario={draft} onChange={onMetadataChange} />
           </>
         )}
       </div>

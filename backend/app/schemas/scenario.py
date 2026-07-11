@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -26,7 +26,7 @@ class DistributionParam(BaseModel):
     model_config = {"populate_by_name": True}
 
     @model_validator(mode="after")
-    def _sanity_check(self) -> "DistributionParam":
+    def _sanity_check(self) -> DistributionParam:
         if self.type in {
             DistributionType.PERT,
             DistributionType.TRIANGULAR,
@@ -73,7 +73,6 @@ class ScenarioBase(BaseModel):
     description: str | None = None
     business_unit: str | None = None
     scenario_type: str | None = None
-    benchmark_group: str | None = None
     tags: list[str] = Field(default_factory=list)
     owner_label: str | None = None
     mode: DecompositionMode = DecompositionMode.TEF_VULN
@@ -99,7 +98,6 @@ class ScenarioUpdate(BaseModel):
     description: str | None = None
     business_unit: str | None = None
     scenario_type: str | None = None
-    benchmark_group: str | None = None
     tags: list[str] | None = None
     owner_label: str | None = None
     mode: DecompositionMode | None = None
@@ -126,16 +124,3 @@ class ScenarioRead(ScenarioBase):
     latest_simulation_id: str | None = None
 
 
-class ScenarioVersionRead(BaseModel):
-    id: int
-    scenario_id: str
-    version_label: str
-    note: str | None
-    author_user_id: int | None
-    created_at: datetime
-
-
-class ApprovalTransitionRequest(BaseModel):
-    action: Literal["submit_for_review", "approve", "reject", "archive", "reopen"]
-    note: str | None = None
-    assigned_reviewer_user_id: int | None = None

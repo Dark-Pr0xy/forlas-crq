@@ -10,16 +10,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query, status
 from pydantic import BaseModel
 from sqlmodel import select
 
 from app.deps import CurrentUser, RequestId, ReviewerUser, SessionDep
 from app.models._base import SimulationStatus
 from app.models.portfolio import PortfolioSnapshot
-from app.models.scenario import Scenario
 from app.models.simulation import SimulationRun
-from app.schemas.common import Message
 from app.services import portfolio as portfolio_svc
 from app.services import scenario as scn_svc
 

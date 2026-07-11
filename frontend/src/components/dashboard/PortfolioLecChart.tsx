@@ -18,7 +18,7 @@ export function PortfolioLecChart({
 }: PortfolioLecChartProps) {
   const chartTheme = useChartTheme();
   const option = useMemo(() => {
-    const markLines: any[] = [];
+    const markLines: Record<string, unknown>[] = [];
     if (appetite != null && appetite > 0) {
       markLines.push({
         xAxis: appetite,
@@ -50,7 +50,7 @@ export function PortfolioLecChart({
           label: { show: false },
           lineStyle: { color: "#647085", type: "dashed", width: 1 },
         },
-        formatter: (params: any[]) => {
+        formatter: (params: { axisValue?: number | string; value?: [number, number] }[]) => {
           const p = params[0];
           const cursorX = Number(p.axisValue ?? p.value?.[0] ?? 0);
           const exceed = interpolateY(seriesData, cursorX);

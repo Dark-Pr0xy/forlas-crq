@@ -21,12 +21,11 @@ from typing import Any
 import numpy as np
 from scipy import stats
 
+from app.engine.errors import SimulationInputError
+
 # 10th / 90th percentile z-scores (used to fit a lognormal from observed p10/p90)
 Z10 = -1.2815515655
 Z90 = 1.2815515655
-
-
-from app.engine.errors import SimulationInputError
 
 
 class DistError(SimulationInputError):

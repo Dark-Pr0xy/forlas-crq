@@ -17,7 +17,7 @@ export function SensitivityTornado({ data, height = 220 }: SensitivityTornadoPro
       grid: { ...baseGrid, left: 160 },
       tooltip: {
         trigger: "axis",
-        formatter: (params: any[]) => {
+        formatter: (params: { name: string; value: number }[]) => {
           const p = params[0];
           return `<b>${p.name}</b><br/>rank corr: ${p.value.toFixed(3)}`;
         },
@@ -43,7 +43,7 @@ export function SensitivityTornado({ data, height = 220 }: SensitivityTornadoPro
           label: {
             show: true,
             position: "right",
-            formatter: (p: any) => p.value.toFixed(2),
+            formatter: (p: { value: number }) => p.value.toFixed(2),
             fontSize: 11,
             color: "#647085",
           },

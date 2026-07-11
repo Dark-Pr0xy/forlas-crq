@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # Identity / branding
     app_name: str = "FORLAS CRQ"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
 
     # Data layout
     data_dir: Path = Field(default_factory=_default_data_dir)
@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ validators
 
     @model_validator(mode="after")
-    def _resolve_secret_key(self) -> "Settings":
+    def _resolve_secret_key(self) -> Settings:
         """Load or create a persistent signing key.
 
         Precedence: explicit `FORLAS_SECRET_KEY` env/`.env` value wins. Otherwise

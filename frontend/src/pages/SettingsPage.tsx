@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, Upload, UserPlus } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardHint, CardTitle } from "@/components/ui/Card";
@@ -26,6 +26,7 @@ export function SettingsPage() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {isOwner && <SimulationDefaultsCard />}
+      {isOwner && <GovernanceCard />}
       <ImportAlphaCard />
       <PasswordCard userId={currentUser?.id ?? null} />
       {isOwner && <BackupsCard />}
@@ -88,6 +89,52 @@ function SimulationDefaultsCard() {
         >
           {save.isPending ? "Saving…" : "Save"}
         </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
+// --------------------------------------------------------------- governance
+
+function GovernanceCard() {
+  const qc = useQueryClient();
+  const { data } = useQuery<AppSettings>({
+    queryKey: ["settings"],
+    queryFn: () => api.get<AppSettings>("/api/settings"),
+  });
+  const save = useMutation({
+    mutationFn: (payload: Partial<AppSettings>) =>
+      api.patch<AppSettings>("/api/settings", payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+  });
+
+  if (!data) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Governance</CardTitle>
+        <CardHint>Approval controls · Owner only</CardHint>
+      </CardHeader>
+      <CardBody className="space-y-3">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4"
+            checked={data.enforce_separation_of_duties}
+            disabled={save.isPending}
+            onChange={(e) =>
+              save.mutate({ enforce_separation_of_duties: e.target.checked })
+            }
+          />
+          <span>
+            <span className="text-sm font-medium">Require a separate approver</span>
+            <span className="block text-xs text-muted">
+              When on, the person who submits a scenario for review cannot approve it
+              (segregation of duties). Turn off for single-user installs.
+            </span>
+          </span>
+        </label>
       </CardBody>
     </Card>
   );
@@ -157,7 +204,7 @@ function PasswordCard({ userId }: { userId: number | null }) {
       setPassword("");
       setConfirm("");
     },
-    onError: () => setNote("Update failed."),
+    onError: (e) => setNote(`Update failed: ${apiErrorMessage(e)}`),
   });
 
   const mismatch = password.length > 0 && password !== confirm;

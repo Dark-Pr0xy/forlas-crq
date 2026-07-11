@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Badge } from "@/components/ui/Badge";
+import { useAddScenarioType, useScenarioTypes } from "@/lib/queries";
 import type { ScenarioRead } from "@/types/api";
 
 export interface MetadataPanelChanges {
   business_unit?: string;
   owner_label?: string;
   scenario_type?: string;
-  benchmark_group?: string;
   tags?: string[];
   assessment_date?: string;
   review_date?: string;
@@ -26,6 +28,9 @@ interface MetadataPanelProps {
 
 export function MetadataPanel({ scenario, onChange }: MetadataPanelProps) {
   const [tagInput, setTagInput] = useState((scenario.tags ?? []).join(", "));
+  // Reset the free-text tag field only when switching scenarios; while typing,
+  // scenario.tags changes on every keystroke and must NOT clobber the input.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => setTagInput((scenario.tags ?? []).join(", ")), [scenario.id]);
 
   return (
@@ -48,9 +53,9 @@ export function MetadataPanel({ scenario, onChange }: MetadataPanelProps) {
         </Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Scenario type">
-            <Input
+            <ScenarioTypeSelect
               value={scenario.scenario_type ?? ""}
-              onChange={(e) => onChange({ scenario_type: e.target.value })}
+              onChange={(v) => onChange({ scenario_type: v })}
             />
           </Field>
           <Field label="Version">
@@ -60,12 +65,6 @@ export function MetadataPanel({ scenario, onChange }: MetadataPanelProps) {
             />
           </Field>
         </div>
-        <Field label="Benchmark group">
-          <Input
-            value={scenario.benchmark_group ?? ""}
-            onChange={(e) => onChange({ benchmark_group: e.target.value })}
-          />
-        </Field>
         <Field label="Tolerance (AUD)">
           <Input
             type="number"
@@ -128,5 +127,93 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label>{label}</Label>
       {children}
     </div>
+  );
+}
+
+const ADD_SENTINEL = "__add_new_type__";
+
+/** Preset scenario-type picker with an inline "add your own" flow. */
+function ScenarioTypeSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data } = useScenarioTypes();
+  const add = useAddScenarioType();
+  const [adding, setAdding] = useState(false);
+  const [newType, setNewType] = useState("");
+
+  const types = data?.types ?? [];
+  // Keep a legacy/current value visible even if it's not in the known list.
+  const options =
+    value && !types.some((t) => t.toLowerCase() === value.toLowerCase())
+      ? [value, ...types]
+      : types;
+
+  function commit() {
+    const name = newType.trim();
+    if (!name) return;
+    add.mutate(name, {
+      onSuccess: () => {
+        onChange(name);
+        setAdding(false);
+        setNewType("");
+      },
+    });
+  }
+
+  function cancel() {
+    setAdding(false);
+    setNewType("");
+  }
+
+  if (adding) {
+    return (
+      <div className="flex gap-1">
+        <Input
+          autoFocus
+          value={newType}
+          placeholder="New type"
+          onChange={(e) => setNewType(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Escape") {
+              cancel();
+            }
+          }}
+        />
+        <Button size="sm" onClick={commit} disabled={!newType.trim() || add.isPending}>
+          Add
+        </Button>
+        <Button size="sm" variant="ghost" onClick={cancel} title="Cancel">
+          ✕
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Select
+      value={value}
+      onChange={(e) => {
+        if (e.target.value === ADD_SENTINEL) {
+          setAdding(true);
+          return;
+        }
+        onChange(e.target.value);
+      }}
+    >
+      <option value="">Unspecified</option>
+      {options.map((t) => (
+        <option key={t} value={t}>
+          {t}
+        </option>
+      ))}
+      <option value={ADD_SENTINEL}>＋ Add new type…</option>
+    </Select>
   );
 }

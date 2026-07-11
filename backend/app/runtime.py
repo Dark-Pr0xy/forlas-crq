@@ -23,7 +23,7 @@ def resource_root() -> Path:
     Source: the backend package root (`.../backend`).
     """
     if is_frozen():
-        return Path(getattr(sys, "_MEIPASS"))
+        return Path(sys._MEIPASS)
     # backend/app/runtime.py -> backend/
     return Path(__file__).resolve().parent.parent
 

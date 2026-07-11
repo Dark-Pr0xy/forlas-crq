@@ -4,23 +4,22 @@
 `uvicorn app.main:app`.
 
 Lifespan:
-    - on start: ensure data dirs, run pending migrations, seed bootstrap owner
-      + demo scenarios, print first-run credentials.
-    - on shutdown: dispose of the engine.
+    - on start: ensure data dirs, run pending migrations, seed app settings
+      and (when an owner password is preset) the owner + demo scenarios.
+    - on shutdown: checkpoint the database.
 """
 
 from __future__ import annotations
 
 import logging
-import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config as AlembicConfig
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from alembic import command
 from app.config import settings
 from app.db import get_engine
 from app.models import register_all  # populates SQLModel.metadata
@@ -51,7 +50,6 @@ def _run_migrations() -> None:
     shipped desktop builds are handled at release time, not on every launch.
     """
     from sqlalchemy import inspect
-
     from sqlmodel import SQLModel
 
     from app.runtime import is_frozen
@@ -102,22 +100,31 @@ def _stamp_baseline_revision(cfg: AlembicConfig) -> None:
 
 
 def _bootstrap() -> None:
-    """First-run seeding. Idempotent."""
+    """First-run seeding. Idempotent.
+
+    On a fresh interactive install no owner is auto-created: the user creates
+    the first account through the setup screen, and the demo scenarios are
+    seeded at that point (see ``POST /api/auth/setup``). When an owner password
+    is preset (server / Docker / CI), the owner and demos are seeded here.
+    """
     from sqlmodel import Session
 
     from app.knowledge.seed import seed_knowledge
+    from app.services import sessions as session_svc
     from app.services.seed import (
         ensure_app_settings,
         ensure_bootstrap_owner,
         seed_demo_scenarios,
     )
 
-    from app.services import sessions as session_svc
-
     with Session(get_engine()) as db:
         ensure_app_settings(db)
-        owner, generated_password = ensure_bootstrap_owner(db)
-        seeded = seed_demo_scenarios(db, owner) if settings.seed_demo_scenarios else 0
+        owner = ensure_bootstrap_owner(db)
+        seeded = (
+            seed_demo_scenarios(db, owner)
+            if owner is not None and settings.seed_demo_scenarios
+            else 0
+        )
         kn_counts = seed_knowledge(db)
         purged = session_svc.purge_expired(db)
         db.commit()
@@ -133,35 +140,8 @@ def _bootstrap() -> None:
                 kn_counts["benchmarks"],
             )
 
-        if generated_password:
-            banner = (
-                "\n"
-                + "=" * 72
-                + "\n"
-                + "  FORLAS CRQ — first-run owner account created\n"
-                + f"    email:    {owner.email}\n"
-                + f"    password: {generated_password}\n"
-                + "  This password is shown ONCE. Change it after first login.\n"
-                + "=" * 72
-                + "\n"
-            )
-            print(banner, file=sys.stderr, flush=True)
-            # The desktop (Tauri) build has no console, so also drop the
-            # credentials into a file the user can open. It's deleted on first
-            # successful login (see the login handler).
-            try:
-                cred_file = settings.data_dir / "FIRST_RUN_LOGIN.txt"
-                cred_file.write_text(
-                    "FORLAS CRQ — first-run login\n\n"
-                    f"  Email:    {owner.email}\n"
-                    f"  Password: {generated_password}\n\n"
-                    "Change this password after logging in (Settings → Change your "
-                    "password). This file is deleted automatically once you log in.\n",
-                    encoding="utf-8",
-                )
-                logger.info("First-run credentials written to %s", cred_file)
-            except OSError:
-                logger.exception("Could not write first-run credentials file.")
+        if owner is None:
+            logger.info("No accounts yet — awaiting first-run account creation.")
         if seeded:
             logger.info("Seeded %d demo scenarios.", seeded)
 
@@ -222,6 +202,7 @@ def make_app() -> FastAPI:
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 
     from app.api import (
+        analysis,
         auth,
         governance,
         knowledge,
@@ -236,6 +217,7 @@ def make_app() -> FastAPI:
     app.include_router(system.router)
     app.include_router(auth.router)
     app.include_router(scenarios.router)
+    app.include_router(analysis.router)
     app.include_router(simulations.router)
     app.include_router(portfolios.router)
     app.include_router(reports.router)

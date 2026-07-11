@@ -69,7 +69,6 @@ def _map_scenario(raw: dict[str, Any], owner: User) -> Scenario:
         name=raw.get("name") or "Imported scenario",
         business_unit=raw.get("bu"),
         scenario_type=raw.get("type"),
-        benchmark_group=raw.get("benchmarkGroup"),
         tags=list(raw.get("tags") or []),
         mode=mode,
         inputs=dict(raw.get("inputs") or {}),

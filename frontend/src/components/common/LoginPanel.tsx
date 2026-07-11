@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useAuth } from "@/store/auth";
 import type { SessionStatus, UserPublic } from "@/types/api";
+import brand from "@/assets/forlas-brand.png";
 
 interface LoginResponse {
   user: UserPublic;
@@ -15,7 +16,7 @@ interface LoginResponse {
 }
 
 export function LoginPanel() {
-  const [email, setEmail] = useState("owner@local");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const setSession = useAuth((s) => s.setSession);
@@ -55,14 +56,13 @@ export function LoginPanel() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="w-full max-w-[400px]"
       >
+        <img
+          src={brand}
+          alt="FORLAS - Forecasting Loss and Operational Risk Assessment"
+          className="pointer-events-none mx-auto mb-4 w-full max-w-[240px] select-none"
+          draggable={false}
+        />
         <Card className="p-7">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-md bg-gradient-to-br from-accent to-plum" />
-            <div>
-              <h1 className="text-base font-semibold">FORLAS CRQ</h1>
-              <p className="text-xs text-muted">Local-first quantitative risk</p>
-            </div>
-          </div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -71,10 +71,10 @@ export function LoginPanel() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
+                id="username"
+                type="text"
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -101,7 +101,7 @@ export function LoginPanel() {
               {mutation.isPending ? "Signing in…" : "Sign in"}
             </Button>
             <p className="pt-2 text-center text-[11px] text-muted">
-              First run? Check the backend stdout for the auto-generated owner password.
+              Accounts are local to this machine.
             </p>
           </form>
         </Card>

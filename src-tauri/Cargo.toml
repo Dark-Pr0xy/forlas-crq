@@ -1,6 +1,6 @@
 [package]
 name = "forlas-crq"
-version = "0.1.0"
+version = "0.2.0"
 description = "FORLAS CRQ — local-first quantitative cyber risk platform"
 authors = ["Michael Walker"]
 license = "MIT"

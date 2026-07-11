@@ -67,7 +67,7 @@ export function apiErrorMessage(err: unknown): string {
   return "Unexpected error";
 }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface RequestOptions {
   method?: Method;
@@ -127,6 +127,8 @@ export const api = {
     request<T>(path, { method: "GET", signal }),
   post: <T = unknown>(path: string, body?: unknown, signal?: AbortSignal) =>
     request<T>(path, { method: "POST", body, signal }),
+  put: <T = unknown>(path: string, body?: unknown, signal?: AbortSignal) =>
+    request<T>(path, { method: "PUT", body, signal }),
   patch: <T = unknown>(path: string, body?: unknown, signal?: AbortSignal) =>
     request<T>(path, { method: "PATCH", body, signal }),
   delete: <T = unknown>(path: string, signal?: AbortSignal) =>

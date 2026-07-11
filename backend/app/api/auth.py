@@ -16,10 +16,11 @@ from app.deps import (
     SessionDep,
     get_current_user_optional,
 )
-from app.models._base import AuditAction, utcnow
+from app.models._base import AuditAction, Role, utcnow
 from app.models.settings import AppSettings
 from app.models.user import User
 from app.schemas.auth import (
+    FirstRunSetup,
     LoginRequest,
     LoginResponse,
     SessionStatus,
@@ -41,11 +42,77 @@ def get_session_status(
     user: Annotated[User | None, Depends(get_current_user_optional)],
 ) -> SessionStatus:
     s = db.get(AppSettings, 1)
+    has_user = db.exec(select(User).limit(1)).first() is not None
     return SessionStatus(
         authenticated=user is not None,
+        needs_setup=not has_user,
         user=UserPublic.model_validate(user, from_attributes=True) if user else None,
         ula_acknowledged=bool(s and s.ula_acknowledged_version),
         ula_version=s.ula_acknowledged_version if s else None,
+    )
+
+
+@router.post("/setup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+def first_run_setup(
+    payload: FirstRunSetup,
+    request: Request,
+    response: Response,
+    db: SessionDep,
+    request_id: RequestId,
+) -> LoginResponse:
+    """Create the first account on a fresh install and sign it in.
+
+    Only usable while no accounts exist; once one does, this is closed (409).
+    """
+    from app.services.seed import create_first_owner, seed_demo_scenarios
+
+    if db.exec(select(User).limit(1)).first() is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Setup has already been completed")
+
+    user = create_first_owner(db, username=payload.username, password=payload.password)
+    if settings.seed_demo_scenarios:
+        seed_demo_scenarios(db, user)
+
+    token = sign_session(user.id)
+    session_svc.issue(
+        db,
+        user_id=user.id,
+        token=token,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
+    user.last_login_at = utcnow()
+    db.flush()
+    audit.record(
+        db,
+        actor=user,
+        action=AuditAction.CREATE,
+        entity_type="user",
+        entity_id=user.id,
+        summary=f"First-run account created: {user.email}",
+        request_id=request_id,
+    )
+    audit.record(
+        db,
+        actor=user,
+        action=AuditAction.LOGIN,
+        entity_type="user",
+        entity_id=user.id,
+        summary=f"Logged in as {user.email}",
+        request_id=request_id,
+    )
+    db.commit()
+    response.set_cookie(
+        key=settings.session_cookie_name,
+        value=token,
+        max_age=settings.session_ttl_hours * 3600,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # local-only; HTTPS not assumed
+    )
+    return LoginResponse(
+        user=UserPublic.model_validate(user, from_attributes=True),
+        session_token=token,
     )
 
 
@@ -64,14 +131,6 @@ def login(
     # Upgrade the stored hash if the Argon2 cost parameters have changed (M4).
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(payload.password)
-
-    # First successful login — remove the plaintext first-run credentials file.
-    cred_file = settings.data_dir / "FIRST_RUN_LOGIN.txt"
-    if cred_file.exists():
-        try:
-            cred_file.unlink()
-        except OSError:
-            pass
 
     # Opportunistically clear out stale rows so the table doesn't grow forever.
     session_svc.purge_expired(db)
@@ -180,22 +239,61 @@ def update_user(
     user_id: int,
     payload: UserUpdate,
     db: SessionDep,
-    owner: OwnerUser,
+    current: CurrentUser,
     request_id: RequestId,
 ) -> UserPublic:
+    """Update a user.
+
+    Owners can change anything on anyone. Everyone else may change only their
+    OWN password and display name (the Settings "change your password" card),
+    never role or active status.
+    """
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     data = payload.model_dump(exclude_unset=True)
+
+    is_self = current.id == user.id
+    is_owner = Role.rank(current.role) >= Role.rank(Role.OWNER)
+    if not is_owner:
+        if not is_self:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Requires role >= owner")
+        disallowed = set(data) - {"password", "display_name"}
+        if disallowed:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "You may only change your own password or display name",
+            )
+
+    # Never let the last active owner be demoted or deactivated: with no owner
+    # left, users and settings become unmanageable.
+    demoting = data.get("role") is not None and data["role"] != Role.OWNER
+    deactivating = data.get("is_active") is False
+    if user.role == Role.OWNER and user.is_active and (demoting or deactivating):
+        another_owner = db.exec(
+            select(User)
+            .where(User.role == Role.OWNER)
+            .where(User.is_active == True)  # noqa: E712
+            .where(User.id != user.id)
+        ).first()
+        if another_owner is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Cannot demote or deactivate the last active owner",
+            )
+
     if "password" in data and data["password"] is not None:
         user.password_hash = hash_password(data.pop("password"))
     for k, v in data.items():
         setattr(user, k, v)
     user.updated_at = utcnow()
+    if deactivating:
+        # Deactivation takes effect immediately, matching DELETE /users/{id}.
+        session_svc.revoke_all_for_user(db, user.id)
     db.flush()
     audit.record(
         db,
-        actor=owner,
+        actor=current,
         action=AuditAction.UPDATE,
         entity_type="user",
         entity_id=user.id,

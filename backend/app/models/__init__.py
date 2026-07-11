@@ -9,13 +9,14 @@ from __future__ import annotations
 
 def register_all() -> None:
     from app.models import (  # noqa: F401
+        analysis,
         approval,
         audit,
         knowledge,
         portfolio,
         scenario,
         session,
-        settings as settings_model,
+        settings,
         simulation,
         user,
     )

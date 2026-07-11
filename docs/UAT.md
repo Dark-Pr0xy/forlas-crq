@@ -1,7 +1,7 @@
 # User Acceptance Testing (UAT) Plan
 
 **Product:** FORLAS CRQ — Local-first Quantitative Cyber Risk Platform
-**Version under test:** 0.1.0
+**Version under test:** 0.2.0
 **Platform:** Windows 10 / 11 (x64), desktop installer
 **Document date:** 2026-07-04
 **Author:** Michael Walker
@@ -12,7 +12,7 @@
 
 | Field | Value |
 |---|---|
-| Installer under test | `FORLAS CRQ_0.1.0_x64-setup.exe` |
+| Installer under test | `FORLAS CRQ_0.2.0_x64-setup.exe` |
 | Data location | `%APPDATA%\app.forlas.crq\` |
 | Backend endpoint (internal) | `http://127.0.0.1:8765` (loopback only) |
 | Test data policy | Use a throwaway install / user; math cases are self-contained |
@@ -83,8 +83,8 @@ Severity legend: 🔴 Critical · 🟠 High · 🟡 Medium · ⚪ Low.
 |---|---|---|---|---|---|
 | INST-01 | 🔴 | Clean install | Run the installer on a machine without a prior install | Installs; desktop/Start shortcut created; app launches | |
 | INST-02 | 🔴 | First-run backend start | Launch app first time | Window shows "Connecting to local backend…", then loads the login/register screen within ~5–15s (no permanent hang) | |
-| INST-03 | 🟠 | First-run credentials | On first run, retrieve `%APPDATA%\app.forlas.crq\FIRST_RUN_LOGIN.txt` | File contains the generated owner username + password | |
-| INST-04 | 🟠 | Credential file cleanup | Log in successfully with those credentials | `FIRST_RUN_LOGIN.txt` is deleted after first successful login | |
+| INST-03 | 🔴 | First-run account creation | On first run the "Create your account" screen appears; choose a username + password and submit | Account created and you are signed straight in | |
+| INST-04 | 🟠 | Setup closes after first run | Close and reopen the app | The setup screen does not reappear; the sign-in screen is shown instead | |
 | INST-05 | 🟡 | Upgrade over existing install | Install a new build over an existing one | App upgrades; existing database and users preserved | |
 
 ### 5.2 Authentication & users

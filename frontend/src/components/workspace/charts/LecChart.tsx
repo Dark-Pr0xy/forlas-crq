@@ -50,7 +50,7 @@ export function LecChart({ curve, referenceLines = [], height = 280 }: LecChartP
           label: { show: false },
           lineStyle: { color: "#647085", type: "dashed", width: 1 },
         },
-        formatter: (params: any[]) => {
+        formatter: (params: { axisValue?: number | string; value?: [number, number] }[]) => {
           const p = params[0];
           // params[0].value[0] gives the nearest sample's x; we use the
           // axisPointer's actual x (axisValue) and interpolate so the readout

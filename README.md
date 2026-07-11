@@ -9,7 +9,7 @@ Production Beta of the FORLAS CRQ tool: a **local-first, offline, no-cloud, no-t
 
 ## Stack
 
-**Backend** — Python 3.13+, FastAPI, SQLModel, Alembic, Pydantic v2, NumPy/SciPy, WeasyPrint, python-docx, Argon2.
+**Backend** — Python 3.13+, FastAPI, SQLModel, Alembic, Pydantic v2, NumPy/SciPy, python-docx, Argon2.
 
 **Frontend** — React + TypeScript, Vite, Tailwind CSS, ShadCN, Zustand, TanStack Query, TanStack Table, ECharts, Motion.
 
@@ -46,7 +46,7 @@ npm run dev
 
 Frontend opens on http://localhost:5173, talks to the backend on http://localhost:8765.
 
-First-run: the backend seeds an initial **Owner** account (credentials printed to stdout once) and the 6 demo scenarios from the Alpha.
+First-run: on a fresh install the app shows a **Create your account** screen to set up the local Owner account, then seeds the demo scenarios. Server/Docker deployments can preset `FORLAS_BOOTSTRAP_OWNER_PASSWORD` to auto-create the owner instead.
 
 ## Design philosophy
 

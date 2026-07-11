@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { Camera, RotateCw } from "lucide-react";
+import { Camera, RotateCcw, RotateCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardHint, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { SortableCards, type SortableCardDef } from "@/components/common/SortableCards";
 import { PortfolioLecChart } from "@/components/dashboard/PortfolioLecChart";
 import { PortfolioTrendChart } from "@/components/dashboard/PortfolioTrendChart";
 import { TopScenariosTable } from "@/components/dashboard/TopScenariosTable";
 import { fmt } from "@/lib/format";
+import { useCardOrder } from "@/lib/useCardOrder";
 import {
   useCapturePortfolioSnapshot,
   usePortfolioRollup,
@@ -18,6 +20,7 @@ import {
 } from "@/lib/queries";
 
 const APPETITE_KEY = "forlas.portfolio_appetite";
+const DASHBOARD_CARD_ORDER = ["lec", "drivers", "history", "coverage", "tolerance", "ci"];
 
 export function DashboardPage() {
   const qc = useQueryClient();
@@ -58,52 +61,15 @@ export function DashboardPage() {
   const awaitingSim =
     (scenarios?.length ?? 0) - (rollup?.simulated_count ?? 0);
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold">Portfolio at a glance</h2>
-          <p className="text-xs text-muted">
-            Aggregated across {rollup?.simulated_count ?? 0} simulated scenario(s){" "}
-            {rollup?.iterations
-              ? `· ${rollup.iterations.toLocaleString()} iterations`
-              : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              qc.invalidateQueries({ queryKey: ["portfolio", "rollup"] });
-              qc.invalidateQueries({ queryKey: ["portfolio", "register"] });
-              qc.invalidateQueries({ queryKey: ["scenarios"] });
-            }}
-          >
-            <RotateCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Button
-            onClick={() =>
-              snapshot.mutate({ reason: "manual" })
-            }
-            disabled={snapshot.isPending || !(rollup && rollup.simulated_count > 0)}
-          >
-            <Camera className="h-4 w-4" />
-            {snapshot.isPending ? "Capturing…" : "Capture snapshot"}
-          </Button>
-        </div>
-      </div>
+  const { order, apply, reset, isCustomized } = useCardOrder(
+    "forlas.dashboard_cards",
+    DASHBOARD_CARD_ORDER,
+  );
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-        <Kpi label="Portfolio ALE" value={fmt.money(rollup?.total_ale ?? 0)} tone="accent" sub={isLoading ? "Loading…" : undefined} />
-        <Kpi label="P50" value={fmt.money(rollup?.total_p50 ?? 0)} tone="plum" />
-        <Kpi label="P90" value={fmt.money(rollup?.total_p90 ?? 0)} tone="teal" />
-        <Kpi label="P95" value={fmt.money(rollup?.total_p95 ?? 0)} tone="amber" />
-        <Kpi label="P99" value={fmt.money(rollup?.total_p99 ?? 0)} tone="rose" />
-        <Kpi label="Tail mean" value={fmt.money(rollup?.total_tail ?? 0)} tone="rose" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+  const cards: Record<string, SortableCardDef> = {
+    lec: {
+      colSpan: 1,
+      node: (
         <Card>
           <CardHeader>
             <CardTitle>Portfolio Loss Exceedance</CardTitle>
@@ -136,7 +102,11 @@ export function DashboardPage() {
             )}
           </CardBody>
         </Card>
-
+      ),
+    },
+    drivers: {
+      colSpan: 1,
+      node: (
         <Card>
           <CardHeader>
             <CardTitle>Top loss drivers</CardTitle>
@@ -146,19 +116,25 @@ export function DashboardPage() {
             <TopScenariosTable rows={rollup?.top_scenarios ?? []} />
           </CardBody>
         </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Portfolio history</CardTitle>
-          <CardHint>Captured snapshots — ALE / P95 / P99</CardHint>
-        </CardHeader>
-        <CardBody>
-          <PortfolioTrendChart snapshots={snapshots ?? []} />
-        </CardBody>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      ),
+    },
+    history: {
+      colSpan: 2,
+      node: (
+        <Card>
+          <CardHeader>
+            <CardTitle>Portfolio history</CardTitle>
+            <CardHint>Captured snapshots — ALE / P95 / P99</CardHint>
+          </CardHeader>
+          <CardBody>
+            <PortfolioTrendChart snapshots={snapshots ?? []} />
+          </CardBody>
+        </Card>
+      ),
+    },
+    coverage: {
+      colSpan: 1,
+      node: (
         <Card>
           <CardHeader>
             <CardTitle>Coverage</CardTitle>
@@ -175,7 +151,11 @@ export function DashboardPage() {
             )}
           </CardBody>
         </Card>
-
+      ),
+    },
+    tolerance: {
+      colSpan: 1,
+      node: (
         <Card>
           <CardHeader>
             <CardTitle>Over tolerance</CardTitle>
@@ -192,7 +172,11 @@ export function DashboardPage() {
             </p>
           </CardBody>
         </Card>
-
+      ),
+    },
+    ci: {
+      colSpan: 1,
+      node: (
         <Card>
           <CardHeader>
             <CardTitle>Confidence interval</CardTitle>
@@ -207,7 +191,62 @@ export function DashboardPage() {
             </Badge>
           </CardBody>
         </Card>
+      ),
+    },
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Portfolio at a glance</h2>
+          <p className="text-xs text-muted">
+            Aggregated across {rollup?.simulated_count ?? 0} simulated scenario(s){" "}
+            {rollup?.iterations
+              ? `· ${rollup.iterations.toLocaleString()} iterations`
+              : ""}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {isCustomized && (
+            <Button variant="ghost" onClick={reset} title="Restore the default card layout">
+              <RotateCcw className="h-4 w-4" />
+              Reset layout
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["portfolio", "rollup"] });
+              qc.invalidateQueries({ queryKey: ["portfolio", "register"] });
+              qc.invalidateQueries({ queryKey: ["scenarios"] });
+            }}
+          >
+            <RotateCw className="h-4 w-4" />
+            Refresh
+          </Button>
+          <Button
+            onClick={() =>
+              snapshot.mutate({ reason: "manual" })
+            }
+            disabled={snapshot.isPending || !(rollup && rollup.simulated_count > 0)}
+          >
+            <Camera className="h-4 w-4" />
+            {snapshot.isPending ? "Capturing…" : "Capture snapshot"}
+          </Button>
+        </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <Kpi label="Portfolio ALE" value={fmt.money(rollup?.total_ale ?? 0)} tone="accent" sub={isLoading ? "Loading…" : undefined} />
+        <Kpi label="P50" value={fmt.money(rollup?.total_p50 ?? 0)} tone="plum" />
+        <Kpi label="P90" value={fmt.money(rollup?.total_p90 ?? 0)} tone="teal" />
+        <Kpi label="P95" value={fmt.money(rollup?.total_p95 ?? 0)} tone="amber" />
+        <Kpi label="P99" value={fmt.money(rollup?.total_p99 ?? 0)} tone="rose" />
+        <Kpi label="Tail mean" value={fmt.money(rollup?.total_tail ?? 0)} tone="rose" />
+      </div>
+
+      <SortableCards layout="grid" cards={cards} order={order} onReorder={apply} />
     </div>
   );
 }

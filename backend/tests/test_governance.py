@@ -40,6 +40,9 @@ def _login_as(client, email: str, password: str = "TestPass1!") -> None:
 
 
 def test_approval_happy_path(owner_client):
+    # This test exercises the state machine mechanics with a single actor, so
+    # turn off segregation of duties (covered separately below).
+    owner_client.patch("/api/settings", json={"enforce_separation_of_duties": False})
     public_id = _create_scenario(owner_client)
     # draft → in_review (owner is also a reviewer)
     r = owner_client.post(
@@ -107,6 +110,58 @@ def test_reviewer_cannot_approve(owner_client):
         json={"action": "approve"},
     )
     assert r.status_code == 403
+
+
+def test_self_approval_blocked_by_separation_of_duties(owner_client):
+    """The person who submits a scenario for review cannot approve it."""
+    public_id = _create_scenario(owner_client)
+    r = owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "submit_for_review"},
+    )
+    assert r.status_code == 201
+    # Same user tries to approve — blocked as a conflict.
+    r = owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "approve"},
+    )
+    assert r.status_code == 409, r.text
+
+
+def test_separate_approver_can_approve(owner_client):
+    """A different approver can sign off a scenario submitted by someone else."""
+    _create_user(owner_client, "approver@local", "approver")
+    public_id = _create_scenario(owner_client)
+    # owner submits
+    r = owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "submit_for_review"},
+    )
+    assert r.status_code == 201
+    # a separate approver signs off
+    _login_as(owner_client, "approver@local")
+    r = owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "approve", "note": "independent review"},
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["state"] == "approved"
+
+
+def test_self_approval_allowed_when_control_disabled(owner_client):
+    """With separation of duties turned off, self-approval is permitted."""
+    owner_client.patch("/api/settings", json={"enforce_separation_of_duties": False})
+    public_id = _create_scenario(owner_client)
+    owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "submit_for_review"},
+    )
+    r = owner_client.post(
+        f"/api/governance/scenarios/{public_id}/transition",
+        json={"action": "approve"},
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["state"] == "approved"
 
 
 def test_readonly_cannot_transition(owner_client):

@@ -39,6 +39,7 @@
         width: 32px; height: 32px; border-radius: 6px;
         background: linear-gradient(135deg, #7A92F4, #A28AD9);
       }
+      .header .logo-img { height: 52px; width: auto; }
       .scenario-block { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e8ebf2; page-break-inside: avoid; }
       .scenario-block h3 { margin-top: 0; display: flex; align-items: baseline; gap: 8px; }
       .footer {
@@ -59,7 +60,11 @@
   <body>
     <button class="print-btn" onclick="window.print()">Print to PDF</button>
     <div class="header">
+      {% if brand_logo %}
+      <img class="logo-img" src="{{ brand_logo }}" alt="FORLAS" />
+      {% else %}
       <div class="logo"></div>
+      {% endif %}
       <div>
         <h1>{{ title }}</h1>
         <div class="meta">

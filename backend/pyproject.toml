@@ -1,6 +1,6 @@
 [project]
 name = "forlas-crq"
-version = "0.1.0"
+version = "0.2.0"
 description = "FORLAS CRQ — local-first quantitative cyber risk platform"
 # No `readme` here on purpose: it lives at the repo root (../README.md), which
 # is outside the backend Docker build context. Pointing at it breaks the image
@@ -29,11 +29,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# WeasyPrint needs GTK on Windows — make it opt-in. HTML print-to-PDF works
-# everywhere without it.
-pdf = [
-    "weasyprint>=63",
-]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
@@ -56,7 +51,17 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "RUF"]
-ignore = ["E501"]
+ignore = [
+    "E501",
+    # FastAPI's `Query(...)` / `Depends(...)` in argument defaults is the
+    # framework's documented pattern, not the mutable-default footgun B008
+    # guards against.
+    "B008",
+    # `class X(str, Enum)` is kept deliberately: SQLModel/SQLite columns and
+    # Pydantic serialisation rely on plain-str members; migrating to StrEnum
+    # is churn without benefit here.
+    "UP042",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

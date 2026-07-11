@@ -15,7 +15,7 @@ from app.config import settings
 from app.engine.portfolio import aggregate
 from app.models._base import SimulationStatus
 from app.models.scenario import Scenario
-from app.models.simulation import SimulationArtifact, SimulationRun
+from app.models.simulation import SimulationRun
 from app.services.portfolio import collect_latest_runs
 
 

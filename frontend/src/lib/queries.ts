@@ -11,9 +11,12 @@ import {
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
+  AnalysisRecord,
+  AnalysisUpdate,
   LossesResponse,
   ScenarioCreate,
   ScenarioRead,
+  ScenarioTypesResponse,
   SimulationRequest,
   SimulationResult,
 } from "@/types/api";
@@ -23,6 +26,8 @@ export const keys = {
   scenario: (id: string) => ["scenarios", id] as const,
   latestSimulation: (id: string) => ["scenarios", id, "latest-sim"] as const,
   losses: (runId: string) => ["simulations", runId, "losses"] as const,
+  analysis: (id: string) => ["scenarios", id, "analysis"] as const,
+  scenarioTypes: ["scenario-types"] as const,
 };
 
 export function useScenarios(
@@ -32,14 +37,6 @@ export function useScenarios(
     queryKey: keys.scenarios,
     queryFn: () => api.get<ScenarioRead[]>("/api/scenarios"),
     ...options,
-  });
-}
-
-export function useScenario(id: string | null) {
-  return useQuery({
-    queryKey: id ? keys.scenario(id) : ["scenario", "none"],
-    queryFn: () => api.get<ScenarioRead>(`/api/scenarios/${id}`),
-    enabled: !!id,
   });
 }
 
@@ -112,6 +109,48 @@ export function useTransitionScenario(id: string) {
       qc.invalidateQueries({ queryKey: ["approvals"] });
       qc.invalidateQueries({ queryKey: ["audit"] });
       qc.invalidateQueries({ queryKey: ["reviews"] });
+    },
+  });
+}
+
+// --------------------------------------------------------------- analysis
+
+export function useAnalysis(scenarioId: string | null) {
+  return useQuery({
+    queryKey: scenarioId ? keys.analysis(scenarioId) : ["analysis", "none"],
+    queryFn: () => api.get<AnalysisRecord>(`/api/scenarios/${scenarioId}/analysis`),
+    enabled: !!scenarioId,
+  });
+}
+
+export function useSaveAnalysis(scenarioId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AnalysisUpdate) =>
+      api.put<AnalysisRecord>(`/api/scenarios/${scenarioId}/analysis`, payload),
+    onSuccess: (data) => {
+      qc.setQueryData(keys.analysis(scenarioId), data);
+      qc.invalidateQueries({ queryKey: ["audit"] });
+    },
+  });
+}
+
+// --------------------------------------------------------- scenario types
+
+export function useScenarioTypes() {
+  return useQuery({
+    queryKey: keys.scenarioTypes,
+    queryFn: () => api.get<ScenarioTypesResponse>("/api/scenario-types"),
+  });
+}
+
+export function useAddScenarioType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      api.post<ScenarioTypesResponse>("/api/scenario-types", { name }),
+    onSuccess: (data) => {
+      qc.setQueryData(keys.scenarioTypes, data);
     },
   });
 }

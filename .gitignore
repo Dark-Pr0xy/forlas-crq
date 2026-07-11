@@ -30,9 +30,10 @@ build/
 frontend/dist/
 frontend/.vite/
 
-# Editor / OS
+# Editor / OS / agent config
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 .DS_Store
@@ -50,9 +51,9 @@ backups/
 .env
 .env.local
 
-# Tauri
+# Tauri (Cargo.lock is committed: this is an application, so builds should be
+# reproducible)
 src-tauri/target/
-src-tauri/Cargo.lock
 
 # Logs
 *.log
@@ -74,3 +75,6 @@ FIRST_RUN_LOGIN.txt
 THIRD-PARTY-python.txt
 THIRD-PARTY-js.txt
 THIRD-PARTY-rust.html
+
+# TypeScript incremental build cache
+frontend/tsconfig.tsbuildinfo

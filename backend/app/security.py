@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import secrets
+
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
@@ -32,7 +34,13 @@ def needs_rehash(hashed: str) -> bool:
 
 
 def sign_session(user_id: int) -> str:
-    return _signer.sign(str(user_id).encode("utf-8")).decode("utf-8")
+    # Append a random nonce so two sessions issued for the same user within the
+    # same second (e.g. setup-then-login, or rapid re-auth) never collide on the
+    # unique token constraint. TimestampSigner keeps the "<id>.<nonce>" payload
+    # intact; the nonce is url-safe base64 and never contains a ".".
+    nonce = secrets.token_urlsafe(9)
+    payload = f"{user_id}.{nonce}"
+    return _signer.sign(payload.encode("utf-8")).decode("utf-8")
 
 
 def verify_session(token: str) -> int | None:
@@ -42,6 +50,11 @@ def verify_session(token: str) -> int | None:
     except (BadSignature, SignatureExpired):
         return None
     try:
-        return int(raw.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError):
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    # Payload is "<user_id>.<nonce>" (or a bare "<user_id>" from older tokens).
+    try:
+        return int(text.split(".", 1)[0])
+    except ValueError:
         return None

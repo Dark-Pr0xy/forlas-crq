@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Header, HTTPException, Request, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.config import settings
 from app.db import get_session

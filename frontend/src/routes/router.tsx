@@ -6,8 +6,10 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import { AppShell } from "@/components/common/AppShell";
+import { NotFound } from "@/components/common/NotFound";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { WorkspacePage } from "@/pages/WorkspacePage";
+import { AnalysisEvidencePage } from "@/pages/AnalysisEvidencePage";
 import { SimDataPage } from "@/pages/SimDataPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ReportsPage } from "@/pages/ReportsPage";
@@ -40,6 +42,17 @@ const workspaceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/workspace",
   component: WorkspacePage,
+});
+
+const analysisRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/analysis",
+  component: AnalysisEvidencePage,
+  // Deep-link support: /analysis?scenario=<public_id> preselects a scenario
+  // (used by the "Analysis & evidence" shortcut in the Workspace).
+  validateSearch: (search: Record<string, unknown>): { scenario?: string } => ({
+    scenario: typeof search.scenario === "string" ? search.scenario : undefined,
+  }),
 });
 
 const simDataRoute = createRoute({
@@ -77,6 +90,7 @@ const routeTree = rootRoute.addChildren([
     indexRoute,
     dashboardRoute,
     workspaceRoute,
+    analysisRoute,
     simDataRoute,
     registerRoute,
     reportsRoute,
@@ -84,18 +98,6 @@ const routeTree = rootRoute.addChildren([
     settingsRoute,
   ]),
 ]);
-
-function NotFound() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
-      <div className="text-3xl font-semibold text-ink">404</div>
-      <p className="text-sm text-muted">This page doesn&apos;t exist.</p>
-      <a href="/dashboard" className="text-sm text-accent hover:underline">
-        Back to dashboard
-      </a>
-    </div>
-  );
-}
 
 export const router = createRouter({ routeTree, defaultNotFoundComponent: NotFound });
 

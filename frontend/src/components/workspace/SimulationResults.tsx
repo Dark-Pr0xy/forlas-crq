@@ -5,10 +5,8 @@ import { fmt } from "@/lib/format";
 import { HistogramChart } from "@/components/workspace/charts/HistogramChart";
 import { LecChart } from "@/components/workspace/charts/LecChart";
 import { SensitivityTornado } from "@/components/workspace/charts/SensitivityTornado";
-import {
-  ReferenceLinesEditor,
-  computeReferenceLines,
-} from "@/components/workspace/ReferenceLinesEditor";
+import { ReferenceLinesEditor } from "@/components/workspace/ReferenceLinesEditor";
+import { computeReferenceLines } from "@/lib/referenceLines";
 import type { ScenarioRead, SimulationResult } from "@/types/api";
 
 interface SimulationResultsProps {

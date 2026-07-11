@@ -31,7 +31,6 @@ class Scenario(TimestampMixin, SQLModel, table=True):
     # Categorisation
     business_unit: str | None = Field(default=None, max_length=120, index=True)
     scenario_type: str | None = Field(default=None, max_length=80, index=True)
-    benchmark_group: str | None = Field(default=None, max_length=120)
     tags: list[str] = Field(default_factory=list, sa_column=json_column())
 
     # Ownership

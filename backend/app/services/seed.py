@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
-
 from sqlmodel import Session, select
 
 from app.config import settings
@@ -34,7 +32,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-05-12",
             assessment_date="2026-04-02",
             version_label="1.3",
-            benchmark_group="Industry — Manufacturing",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=1, mode=4, max=12),
@@ -54,7 +51,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-07-01",
             assessment_date="2026-03-20",
             version_label="1.0",
-            benchmark_group="Cross-industry — Insider",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=0.5, mode=1.5, max=4),
@@ -74,7 +70,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-06-15",
             assessment_date="2026-04-30",
             version_label="2.1",
-            benchmark_group="Industry — Retail",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=6, mode=18, max=48),
@@ -94,7 +89,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-08-05",
             assessment_date="2026-05-18",
             version_label="1.1",
-            benchmark_group="Industry — Technology",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=2, mode=8, max=20),
@@ -114,7 +108,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-09-10",
             assessment_date="2026-05-05",
             version_label="1.0",
-            benchmark_group="Industry — Retail",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=4, mode=12, max=30),
@@ -134,7 +127,6 @@ def _seed_scenarios() -> list[dict]:
             review_date="2026-06-22",
             assessment_date="2026-04-12",
             version_label="1.2",
-            benchmark_group="Cross-industry — Third Party",
             mode=DecompositionMode.TEF_VULN.value,
             inputs={
                 "tef": _dist(DistributionType.PERT, min=0.3, mode=1, max=3),
@@ -156,23 +148,46 @@ def ensure_app_settings(db: Session) -> AppSettings:
     return s
 
 
-def ensure_bootstrap_owner(db: Session) -> tuple[User, str | None]:
-    """Create the first-run owner account if no users exist. Returns the user
-    plus the plaintext password if a random one was generated (to print once)."""
+def ensure_bootstrap_owner(db: Session) -> User | None:
+    """Return the existing owner, or auto-create one ONLY when an owner password
+    is preset (server / Docker / CI deployments that set
+    ``FORLAS_BOOTSTRAP_OWNER_PASSWORD``).
+
+    Interactive installs leave no preset password: those create their first
+    account through the setup screen (``POST /api/auth/setup``), so we leave the
+    users table empty here and let the UI drive first-run account creation.
+    """
     existing = db.exec(select(User).limit(1)).first()
     if existing:
-        return existing, None
-    password = settings.bootstrap_owner_password or secrets.token_urlsafe(18)
+        return existing
+    if not settings.bootstrap_owner_password:
+        return None
     user = User(
         email=settings.bootstrap_owner_email,
         display_name=settings.bootstrap_owner_name,
+        password_hash=hash_password(settings.bootstrap_owner_password),
+        role=Role.OWNER,
+        is_active=True,
+    )
+    db.add(user)
+    db.flush()
+    return user
+
+
+def create_first_owner(db: Session, *, username: str, password: str) -> User:
+    """Create the very first account (an Owner) from a user-chosen username and
+    password. Callers must first confirm no users exist."""
+    handle = username.strip()
+    user = User(
+        email=handle.lower(),
+        display_name=handle,
         password_hash=hash_password(password),
         role=Role.OWNER,
         is_active=True,
     )
     db.add(user)
     db.flush()
-    return user, (None if settings.bootstrap_owner_password else password)
+    return user
 
 
 def seed_demo_scenarios(db: Session, owner: User) -> int:

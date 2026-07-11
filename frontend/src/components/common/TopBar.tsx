@@ -14,7 +14,6 @@ const PAGE_TITLES: Record<string, { title: string; crumb: string }> = {
   "/sim-data": { title: "Monte Carlo Simulation Data", crumb: "Raw iteration data" },
   "/register": { title: "Quantified Exposure Register", crumb: "Portfolio-wide exposures" },
   "/reports": { title: "Reports", crumb: "Executive · Board · Exports" },
-  "/knowledge": { title: "Knowledge", crumb: "Threats · Controls · Benchmarks" },
   "/governance": { title: "Governance", crumb: "Audit log · Approvals · Reviews" },
   "/settings": { title: "Settings", crumb: "Application configuration" },
 };

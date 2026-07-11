@@ -42,7 +42,10 @@ export function DistributionParamCard({
   onChange,
   disabled,
 }: DistributionParamCardProps) {
-  const v = value ?? ({ type: "pert" } as DistributionParam);
+  const v = useMemo(
+    () => value ?? ({ type: "pert" } as DistributionParam),
+    [value],
+  );
 
   const preview = useMemo(() => previewLine(v), [v]);
 

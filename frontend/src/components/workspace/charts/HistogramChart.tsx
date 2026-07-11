@@ -42,7 +42,7 @@ export function HistogramChart({
           type: "shadow",
           shadowStyle: { color: "rgba(122, 146, 244, 0.12)" },
         },
-        formatter: (params: any[]) => {
+        formatter: (params: { value: [number, number] }[]) => {
           const p = params[0];
           const center = p.value[0] as number;
           const halfWidth = histogram.w / 2;

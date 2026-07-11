@@ -1,7 +1,7 @@
 # Software Bill of Materials (SBOM)
 
 **Product:** FORLAS CRQ (Cyber Risk Quantification)
-**Version:** 0.1.0
+**Version:** 0.2.0
 **Supplier / Author:** Michael Walker
 **Package identifier:** `app.forlas.crq`
 **Document date:** 2026-07-04
@@ -41,7 +41,7 @@ The application is composed of three build artifacts:
 
 | Component | Version | Licence | Source |
 |---|---|---|---|
-| FORLAS CRQ (this application) | 0.1.0 | MIT — see `LICENCE.md` | First-party |
+| FORLAS CRQ (this application) | 0.2.0 | MIT — see `LICENCE.md` | First-party |
 
 ---
 
@@ -174,9 +174,7 @@ Used to compile/test/package the product. These do **not** ship in the installer
 
 **Python (build/test):** pyinstaller 6.21.0, pyinstaller-hooks-contrib 2026.6, pefile 2024.8.26, altgraph 0.17.5, pywin32-ctypes 0.2.3, setuptools 82.0.1, packaging 26.2, pytest 9.1.1, pytest-asyncio 1.4.0, pytest-cov 7.1.0, coverage 7.14.3, pluggy 1.6.0, iniconfig 2.3.0, ruff 0.15.20, mypy 2.1.0, mypy_extensions 1.1.0, pathspec 1.1.1, Pygments 2.20.0.
 
-**JavaScript (dev/build):** vite 5.4.21, vitest 2.1.9, typescript 5.9.3, typescript-eslint 8.10.x, eslint 9.13.x, eslint-plugin-react-hooks 5.0.x, eslint-plugin-react-refresh 0.4.x, @vitejs/plugin-react 4.3.x, tailwindcss 3.4.19, autoprefixer 10.4.x, postcss 8.4.x, prettier 3.3.x, @tanstack/router-devtools 1.79.x, @types/node, @types/react, @types/react-dom.
-
-**Optional (not enabled in default build):** weasyprint (≥63) — PDF export; requires GTK on Windows and is intentionally opt-in. Not present in the shipped installer.
+**JavaScript (dev/build):** vite 5.4.21, vitest 2.1.9, typescript 5.9.3, typescript-eslint 8.10.x, eslint 9.13.x, eslint-plugin-react-hooks 5.0.x, eslint-plugin-react-refresh 0.4.x, @vitejs/plugin-react 4.3.x, tailwindcss 3.4.19, autoprefixer 10.4.x, postcss 8.4.x, prettier 3.3.x, @types/node, @types/react, @types/react-dom.
 
 ---
 
@@ -236,4 +234,4 @@ cargo install cargo-about && cargo about generate about.hbs > THIRD-PARTY-RUST.h
 
 ---
 
-*This SBOM reflects the dependency state at document date and version 0.1.0. Regenerate on each release. For discrepancies, the authoritative sources are `backend/pyproject.toml`, `frontend/package-lock.json`, and `src-tauri/Cargo.lock`.*
+*This SBOM reflects the dependency state at document date and version 0.2.0. Regenerate on each release. For discrepancies, the authoritative sources are `backend/pyproject.toml`, `frontend/package-lock.json`, and `src-tauri/Cargo.lock`.*

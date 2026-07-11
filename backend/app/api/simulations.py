@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
 from app.deps import CurrentUser, RequestId, ReviewerUser, SessionDep
-from app.models.scenario import Scenario
 from app.models.simulation import SimulationArtifact, SimulationRun
 from app.schemas.simulation import SimulationRequest, SimulationResultFull
 from app.services import scenario as scn_svc

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
-
 from fastapi import APIRouter, status
+from pydantic import BaseModel
 
 from app.deps import CurrentUser, RequestId, ReviewerUser, SessionDep
 from app.schemas.common import Message

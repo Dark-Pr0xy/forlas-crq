@@ -10,7 +10,7 @@ Python backend bundled inside. **No terminal, no Python, no Node required by the
 end user.**
 
 **The installer:**
-`src-tauri/target/release/bundle/nsis/FORLAS CRQ_0.1.0_x64-setup.exe` (~89 MB)
+`src-tauri/target/release/bundle/nsis/FORLAS CRQ_0.2.0_x64-setup.exe` (~87 MB)
 
 **To build it (developer machine):**
 ```powershell
@@ -30,10 +30,11 @@ cargo tauri build
 backend…" until it's ready). Per-user data lives in
 `%APPDATA%\app.forlas.crq\` (database, WAL, backups, reports, secret key).
 
-**First-run login:** because the desktop app has no console, the auto-generated
-owner password is written to `%APPDATA%\app.forlas.crq\FIRST_RUN_LOGIN.txt`.
-Open that file, log in as `owner@local`, change the password in
-Settings → Change your password. The file is deleted automatically on first login.
+**First-run account:** on a fresh install the app shows a "Create your account"
+screen where you choose a username and password for the local Owner account; the
+demo scenarios are seeded once it is created. Server/Docker deployments can
+instead preset `FORLAS_BOOTSTRAP_OWNER_PASSWORD` to auto-create the owner
+non-interactively.
 
 **Auth in the desktop app:** the WebView talks to the backend cross-origin, so
 the frontend authenticates with the `X-Session-Token` header (issued by /login)
@@ -136,6 +137,5 @@ npm run dev
   the SQLite online-backup API and are safe to take while the app is running.
 - No external services are contacted in any path. The CSP in
   `src-tauri/tauri.conf.json` is locked to localhost + Tauri IPC.
-- WeasyPrint (PDF) is intentionally opt-in (`pip install ".[pdf]"`) because
-  it requires GTK on Windows. The shipped reports flow uses
-  browser-print-to-PDF instead, which works everywhere.
+- PDF export uses browser print-to-PDF, which works everywhere with no
+  extra dependencies. There is no server-side PDF renderer.

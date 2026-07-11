@@ -110,8 +110,14 @@ def test_docx_uses_aud_prefix_not_usd(owner_client):
 
 
 def test_html_uses_aud_prefix(owner_client):
+    import re
+
     _make_scenario(owner_client)
     r = owner_client.post("/api/reports/html", json={"kind": "executive"})
     assert r.status_code == 200
-    assert "A$" in r.text
-    assert "USD" not in r.text
+    # Strip inlined data URIs (e.g. the base64 brand logo) before checking for
+    # stray currency labels — random base64 can contain "USD" by chance.
+    visible = re.sub(r"data:[^\"']+", "", r.text)
+    assert "A$" in visible
+    assert "USD" not in visible
+    assert "US$" not in visible

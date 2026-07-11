@@ -40,6 +40,13 @@ class UserCreate(BaseModel):
     role: Role = Role.READONLY
 
 
+class FirstRunSetup(BaseModel):
+    """Payload for creating the very first (owner) account on a fresh install."""
+
+    username: str = Field(min_length=3, max_length=120)
+    password: str = Field(min_length=8, max_length=200)
+
+
 class UserUpdate(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=120)
     role: Role | None = None
@@ -49,6 +56,9 @@ class UserUpdate(BaseModel):
 
 class SessionStatus(BaseModel):
     authenticated: bool
+    # True on a fresh install with no accounts yet: the UI shows the
+    # "Create your account" screen instead of the sign-in form.
+    needs_setup: bool = False
     user: UserPublic | None = None
     ula_acknowledged: bool = False
     ula_version: str | None = None

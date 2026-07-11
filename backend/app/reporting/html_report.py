@@ -7,11 +7,14 @@ option that doesn't require GTK or a headless browser at install time.
 
 from __future__ import annotations
 
+import base64
+import functools
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from app.reporting.currency import format_currency_aud
 from app.runtime import is_frozen, resource_path
 
 # Templates ship next to this module in source mode; in a frozen build they're
@@ -28,9 +31,6 @@ _env = Environment(
     trim_blocks=True,
     lstrip_blocks=True,
 )
-
-
-from app.reporting.currency import format_currency_aud
 
 
 def _money(value: Any) -> str:
@@ -57,9 +57,27 @@ def _date(value: Any) -> str:
 _env.filters.update({"money": _money, "pct": _pct, "date": _date})
 
 
+@functools.lru_cache(maxsize=1)
+def _brand_data_uri() -> str:
+    """The FORLAS brand image as a base64 data URI.
+
+    Reports are opened in a fresh browser window and printed to PDF, so a file
+    path or relative URL wouldn't resolve — the logo has to be inlined.
+    """
+    try:
+        # A small header-sized asset — the logo renders at ~42px tall, so there's
+        # no need to inline the full-resolution print copy on every report.
+        path = resource_path("app", "assets", "forlas-brand-header.png")
+        data = Path(path).read_bytes()
+        return "data:image/png;base64," + base64.b64encode(data).decode("ascii")
+    except OSError:
+        return ""
+
+
 def render_html_report(context: dict[str, Any]) -> str:
     template_name = (
         "report_executive.html" if context.get("kind") == "executive" else "report_board.html"
     )
+    context.setdefault("brand_logo", _brand_data_uri())
     template = _env.get_template(template_name)
     return template.render(**context)

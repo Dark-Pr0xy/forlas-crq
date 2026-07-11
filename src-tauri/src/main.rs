@@ -59,6 +59,20 @@ fn main() {
                     .unwrap()
                     .take()
                 {
+                    // The sidecar is a PyInstaller one-file exe: the process we
+                    // spawned is only the bootloader, which launches the real
+                    // server as a child. Killing the bootloader alone orphans
+                    // that child (it keeps port 8765 and locks the exe, which
+                    // then blocks installer upgrades) — so kill the whole tree.
+                    #[cfg(windows)]
+                    {
+                        use std::os::windows::process::CommandExt;
+                        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/PID", &child.pid().to_string(), "/T", "/F"])
+                            .creation_flags(CREATE_NO_WINDOW)
+                            .status();
+                    }
                     let _ = child.kill();
                 }
             }

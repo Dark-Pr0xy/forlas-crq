@@ -36,10 +36,15 @@ hidden += [
     "app.models.approval",
     "app.models.knowledge",
     "app.models.settings",
+    "app.models.analysis",
 ]
 
-# Bundle the Jinja report templates as data (resolved via app.runtime at run time).
-datas = [("app/reporting/templates", "app/reporting/templates")]
+# Bundle the Jinja report templates + brand assets as data (resolved via
+# app.runtime at run time).
+datas = [
+    ("app/reporting/templates", "app/reporting/templates"),
+    ("app/assets", "app/assets"),
+]
 datas += collect_data_files("scipy")
 
 a = Analysis(
